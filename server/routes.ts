@@ -180,6 +180,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product Search Route - matches shopping list items to existing products
+  app.post("/api/products/search", async (req, res) => {
+    try {
+      const { query, filters } = req.body;
+      
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ message: "Suchbegriff ist erforderlich" });
+      }
+
+      // Search for products matching the query
+      const searchFilters = {
+        query: query.trim(),
+        ...filters
+      };
+
+      const matchingProducts = await storage.getProducts(searchFilters);
+      
+      // Sort by price ascending 
+      const sortedProducts = matchingProducts.sort((a, b) => a.price - b.price);
+
+      res.json(sortedProducts);
+    } catch (error) {
+      res.status(500).json({ message: "Fehler bei der Produktsuche: " + (error as Error).message });
+    }
+  });
+
   // Product Recommendations Route
   app.post("/api/recommendations", async (req, res) => {
     try {
