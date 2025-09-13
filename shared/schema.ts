@@ -82,13 +82,13 @@ export type InsertHealthCriteria = z.infer<typeof insertHealthCriteriaSchema>;
 export const productSearchSchema = z.object({
   query: z.string().optional(),
   supermarket: z.string().optional(),
-  isOrganic: z.boolean().optional(),
-  isGlutenFree: z.boolean().optional(),
-  isLactoseFree: z.boolean().optional(),
-  isSoyFree: z.boolean().optional(),
-  hasNoSweeteners: z.boolean().optional(),
-  isNotUltraProcessed: z.boolean().optional(),
-  minHealthScore: z.number().min(1).max(5).optional(),
+  isOrganic: z.string().transform((val) => val === 'true').optional(),
+  isGlutenFree: z.string().transform((val) => val === 'true').optional(),
+  isLactoseFree: z.string().transform((val) => val === 'true').optional(),
+  isSoyFree: z.string().transform((val) => val === 'true').optional(),
+  hasNoSweeteners: z.string().transform((val) => val === 'true').optional(),
+  isNotUltraProcessed: z.string().transform((val) => val === 'true').optional(),
+  minHealthScore: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().min(1).max(5)).optional(),
 });
 
 export type ProductSearchFilters = z.infer<typeof productSearchSchema>;
