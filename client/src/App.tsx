@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
+import { HealthCriteriaProvider } from '@/contexts/healthCriteria';
 
 function Router() {
   return (
@@ -19,8 +20,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <HealthCriteriaProvider>
+          <Toaster />
+          <Router />
+        </HealthCriteriaProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

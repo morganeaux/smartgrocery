@@ -59,13 +59,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Products Routes
   app.get("/api/products", async (req, res) => {
-    try {
-      const filters = productSearchSchema.parse(req.query);
-      const products = await storage.getProducts(filters);
-      res.json(products);
-    } catch (error) {
-      res.status(500).json({ message: "Fehler beim Laden der Produkte" });
-    }
+    // Wenn ein Suchbegriff übergeben wird, hole Produktvorschläge von OpenFoodFacts
+      const query = String(req.query.query || '');
+      const limit = Number(req.query.limit || 10);
+      // optional criteria param: comma-separated list of enabled criteria names
+      const criteriaParam = typeof req.query.criteria === 'string' ? req.query.criteria : '';
+      const filters: Record<string, any> = { query, limit };
+      if (criteriaParam) {
+        const list = criteriaParam.split(',').map((s) => s.trim()).filter(Boolean);
+        // map known criteria names to boolean flags used in Product
+        for (const c of list) {
+          // basic normalization to lower-case for substring checks
+          const key = c.toLowerCase();
+          if (key.includes('gluten')) {
+            filters.isGlutenFree = true;
+            continue;
+          }
+          if (key.includes('lakt')) {
+            filters.isLactoseFree = true;
+            continue;
+          }
+          if (key.includes('soja') || key.includes('soy')) {
+            filters.isSoyFree = true;
+            continue;
+          }
+          if (key.includes('süß') || key.includes('suss') || key.includes('sweetener')) {
+            filters.hasNoSweeteners = true;
+            continue;
+          }
+          if (key.includes('ultra') || key.includes('ultraverarbeitet') || key.includes('ultraprocess')) {
+            filters.isNotUltraProcessed = true;
+            continue;
+          }
+          if (key.includes('bio') || key.includes('organic')) {
+            filters.isOrganic = true;
+            continue;
+          }
+          // unknown criteria - skip
+        }
+      }
+
+      if (!query) return res.json([]);
+      try {
+        const products = await storage.getProducts(filters);
+        res.json(products);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'failed' });
+      }
   });
 
   app.get("/api/products/:id", async (req, res) => {

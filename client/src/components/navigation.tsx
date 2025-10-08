@@ -4,10 +4,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Navigation() {
   const navItems = [
-    { label: "Einkaufsliste", href: "#" },
-    { label: "Produktsuche", href: "#" },
-    { label: "Supermärkte", href: "#" },
-    { label: "Profil", href: "#" },
+    { label: "Home", href: "/" },
+    { label: "Supermärkte", href: "/supermarket" },
+    { label: "Profil", href: "/profile" },
   ];
 
   return (

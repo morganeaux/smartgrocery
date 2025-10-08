@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ProductSuggestions from "./product-suggestions";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -176,39 +177,52 @@ export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSid
             </div>
           ) : (
             items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                data-testid={`shopping-item-${item.id}`}
-              >
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={item.completed}
-                    onCheckedChange={(checked) => 
-                      handleToggleComplete(item.id, checked as boolean)
-                    }
-                    data-testid={`checkbox-item-${item.id}`}
-                  />
-                  <span 
-                    className={`text-foreground ${item.completed ? 'line-through text-muted-foreground' : ''}`}
-                    data-testid={`text-item-name-${item.id}`}
-                  >
-                    {item.name}
-                  </span>
+              <div key={item.id} className="p-3 bg-muted rounded-lg" data-testid={`shopping-item-${item.id}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={item.completed}
+                      onCheckedChange={(checked) => 
+                        handleToggleComplete(item.id, checked as boolean)
+                      }
+                      data-testid={`checkbox-item-${item.id}`}
+                    />
+                    <span 
+                      className={`text-foreground ${item.completed ? 'line-through text-muted-foreground' : ''}`}
+                      data-testid={`text-item-name-${item.id}`}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground" data-testid={`text-item-quantity-${item.id}`}>
+                      {item.quantity}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                      data-testid={`button-delete-item-${item.id}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground" data-testid={`text-item-quantity-${item.id}`}>
-                    {item.quantity}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="text-red-500 hover:text-red-700 p-1"
-                    data-testid={`button-delete-item-${item.id}`}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+
+                {/* Vorschläge unter dem jeweiligen Listeneintrag */}
+                <div className="mt-2">
+                  <ProductSuggestions
+                    query={item.name}
+                    onSelect={async (product) => {
+                      // Update shopping list entry with selected product name
+                      try {
+                        await updateItemMutation.mutateAsync({ id: item.id, updates: { name: product.name } });
+                      } catch (e) {
+                        // ignore - mutation handles toast
+                      }
+                    }}
+                  />
                 </div>
               </div>
             ))

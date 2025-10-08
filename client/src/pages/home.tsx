@@ -19,23 +19,7 @@ export default function Home() {
         <div className="bg-gradient-to-r from-primary to-green-600 rounded-lg p-8 mb-8 text-white" data-testid="welcome-section">
           <h2 className="text-3xl font-bold mb-4">Willkommen bei GesundEinkauf</h2>
           <p className="text-green-100 text-lg mb-6">Finden Sie gesunde Produkte, die Ihren Ernährungskriterien entsprechen</p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              className="bg-white text-primary px-6 py-3 hover:bg-green-50 font-semibold"
-              data-testid="button-create-list"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Neue Einkaufsliste erstellen
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-white text-white px-6 py-3 hover:bg-white hover:text-primary font-semibold"
-              data-testid="button-browse-products"
-            >
-              <Search className="w-4 h-4 mr-2" />
-              Produkte durchsuchen
-            </Button>
-          </div>
+          {/* Redundante Buttons entfernt, da die Funktionen im Body verfügbar sind */}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">

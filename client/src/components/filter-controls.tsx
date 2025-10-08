@@ -1,26 +1,13 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { HealthCriteria } from "@shared/schema";
+import { useHealthCriteria } from '@/contexts/healthCriteria';
 
 export default function FilterControls() {
-  const { data: criteria = [] } = useQuery<HealthCriteria[]>({
-    queryKey: ["/api/health-criteria"],
-  });
-
-  const updateCriteriaMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<HealthCriteria> }) => {
-      const response = await apiRequest("PATCH", `/api/health-criteria/${id}`, updates);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/health-criteria"] });
-    },
-  });
+  const { criteria, toggle } = useHealthCriteria();
 
   const handleToggleCriteria = (id: string, isEnabled: boolean) => {
-    updateCriteriaMutation.mutate({ id, updates: { isEnabled } });
+    toggle(id, isEnabled);
   };
 
   return (
@@ -30,7 +17,7 @@ export default function FilterControls() {
       </CardHeader>
       <CardContent>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {criteria.map((criterion) => (
+          {criteria.map((criterion: HealthCriteria) => (
             <label 
               key={criterion.id}
               className="flex items-center space-x-2 cursor-pointer"
