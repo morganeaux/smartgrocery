@@ -62,9 +62,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Wenn ein Suchbegriff übergeben wird, hole Produktvorschläge von OpenFoodFacts
       const query = String(req.query.query || '');
       const limit = Number(req.query.limit || 10);
+      // optional supermarket param: filter by selected supermarket
+      const supermarketParam = typeof req.query.supermarket === 'string' ? req.query.supermarket : '';
       // optional criteria param: comma-separated list of enabled criteria names
       const criteriaParam = typeof req.query.criteria === 'string' ? req.query.criteria : '';
       const filters: Record<string, any> = { query, limit };
+      
+      // Add supermarket filter if provided
+      if (supermarketParam) {
+        filters.supermarket = supermarketParam;
+      }
+      
       if (criteriaParam) {
         const list = criteriaParam.split(',').map((s) => s.trim()).filter(Boolean);
         // map known criteria names to boolean flags used in Product

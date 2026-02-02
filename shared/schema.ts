@@ -9,6 +9,7 @@ export const shoppingListItems = pgTable("shopping_list_items", {
   quantity: text("quantity").notNull().default("1x"),
   completed: boolean("completed").notNull().default(false),
   category: text("category"),
+  imageUrl: text("image_url"),
 });
 
 export const products = pgTable("products", {

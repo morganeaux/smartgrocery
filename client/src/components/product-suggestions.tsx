@@ -1,8 +1,9 @@
 
-
 import { useEffect, useState } from "react";
+import { Search, Plus } from "lucide-react";
 import type { Product } from "@shared/schema";
 import { useHealthCriteria } from '@/contexts/healthCriteria';
+import { useSupermarket } from '@/contexts/supermarket';
 
 export interface ProductSuggestionsProps {
   query: string;
@@ -12,21 +13,10 @@ export interface ProductSuggestionsProps {
 
 function SuggestionCard({ product, onSelect, onOpen }: { product: Product; onSelect: (p: Product) => void; onOpen: (p: Product) => void }) {
   return (
-    <div className="group flex-shrink-0 w-36 sm:w-40 md:w-44 lg:w-48">
+    <div className="flex-shrink-0 w-36 sm:w-40 md:w-44 lg:w-48">
       <div className="relative">
-        <div
-          className="border border-border rounded-lg p-2 hover:border-primary transition-colors cursor-pointer bg-white"
-          onClick={() => onOpen(product)}
-          onKeyDown={(e) => {
-            // support Enter and Space to open the details for keyboard users
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onOpen(product);
-            }
-          }}
-          role="button"
-          tabIndex={0}
-        >
+        <div className="border border-border rounded-lg p-2 hover:border-primary transition-colors bg-white">
+          {/* Produktbild */}
           <div className="h-20 mb-2 flex items-center justify-center">
             {product.imageUrl ? (
               <img
@@ -40,12 +30,18 @@ function SuggestionCard({ product, onSelect, onOpen }: { product: Product; onSel
               <div className="h-16 w-full bg-gray-100" />
             )}
           </div>
+          
+          {/* Produktname */}
           <div className="text-sm font-medium text-foreground mb-1 truncate" data-testid={`text-product-name-${product.id}`}>
             {product.name}
           </div>
+          
+          {/* Brand & Size */}
           <div className="text-[11px] text-muted-foreground mb-2 truncate" data-testid={`text-product-brand-${product.id}`}>
             {product.brand} • {product.size}
           </div>
+          
+          {/* Preis & Health Score */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
               {product.price && product.price > 0 ? `€${product.price.toFixed(2)}` : 'k.A.'}
@@ -58,24 +54,41 @@ function SuggestionCard({ product, onSelect, onOpen }: { product: Product; onSel
               ))}
             </div>
           </div>
+          
+          {/* Supermarkt */}
           <div className="text-[11px] text-muted-foreground mt-1 truncate" data-testid={`text-product-supermarket-${product.id}`}>
             {product.supermarket}
           </div>
         </div>
 
-        {/* Quick add button - outside the clickable card to avoid nested interactive elements */}
-        <div className="absolute top-2 right-2">
+        {/* Action Buttons - Immer sichtbar, klar getrennt */}
+        <div className="absolute bottom-2 right-2 flex gap-1">
+          {/* Details anzeigen - Lupen-Icon */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen(product);
+            }}
+            className="bg-white hover:bg-gray-100 text-gray-700 rounded-full p-1.5 shadow-md border border-gray-200 transition-colors"
+            aria-label={`Details anzeigen für ${product.name}`}
+            title="Details anzeigen"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+          
+          {/* Produkt hinzufügen - Plus-Icon */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onSelect(product);
             }}
-            // use opacity instead of display:none so keyboard users can focus the control
-            className="opacity-0 group-hover:opacity-100 focus:opacity-100 bg-primary text-white rounded px-2 py-1 text-xs transition-opacity"
-            aria-label={`Schnell hinzufügen ${product.name}`}
+            className="bg-primary hover:bg-primary/90 text-white rounded-full p-1.5 shadow-md transition-colors"
+            aria-label={`${product.name} zur Liste hinzufügen`}
+            title="Zur Liste hinzufügen"
           >
-            Hinzufügen
+            <Plus className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -88,6 +101,7 @@ export default function ProductSuggestions({ query, limit = 6, onSelect }: Produ
   const [loading, setLoading] = useState(false);
   const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
   const { enabledNames: enabledCriteria } = useHealthCriteria();
+  const { selectedSupermarket } = useSupermarket();
 
   useEffect(() => {
     if (!query || query.trim() === "") {
@@ -101,6 +115,12 @@ export default function ProductSuggestions({ query, limit = 6, onSelect }: Produ
       try {
         const params = new URLSearchParams({ query, limit: String(limit) });
         if (enabledCriteria.length) params.set('criteria', enabledCriteria.join(','));
+        
+        // Supermarkt-Filter hinzufügen
+        if (selectedSupermarket?.name) {
+          params.set('supermarket', selectedSupermarket.name);
+        }
+        
         const res = await fetch(`/api/products?${params.toString()}`);
         const data = await res.json();
         if (!cancelled) setProducts(data || []);
@@ -115,17 +135,22 @@ export default function ProductSuggestions({ query, limit = 6, onSelect }: Produ
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [query, limit, enabledCriteria]);
+  }, [query, limit, enabledCriteria, selectedSupermarket]);
 
   if (!query || products.length === 0) return null;
 
   return (
     <>
       {/* Active filters badge */}
-      {enabledCriteria && enabledCriteria.length > 0 && (
+      {(enabledCriteria.length > 0 || selectedSupermarket) && (
         <div className="mt-2">
           <div className="text-xs text-muted-foreground mb-1">Aktive Filter:</div>
           <div className="flex flex-wrap gap-2">
+            {selectedSupermarket && (
+              <span className="text-xs bg-green-50 text-green-800 px-2 py-1 rounded" data-testid="active-filter-supermarket">
+                Supermarkt: {selectedSupermarket.name}
+              </span>
+            )}
             {enabledCriteria.map((c) => (
               <span key={c} className="text-xs bg-blue-50 text-blue-800 px-2 py-1 rounded" data-testid={`active-filter-${c}`}>
                 {c}

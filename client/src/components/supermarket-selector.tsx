@@ -1,41 +1,19 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { Store } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Supermarket } from "@shared/schema";
+import { useSupermarket } from "@/contexts/supermarket";
 
 export default function SupermarketSelector() {
   const { toast } = useToast();
-
-  const { data: supermarkets = [] } = useQuery<Supermarket[]>({
-    queryKey: ["/api/supermarkets"],
-  });
-
-  const selectSupermarketMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest("POST", `/api/supermarkets/${id}/select`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/supermarkets"] });
-      toast({
-        title: "Supermarkt ausgewählt",
-        description: "Der Supermarkt wurde erfolgreich ausgewählt",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Fehler",
-        description: "Supermarkt konnte nicht ausgewählt werden",
-        variant: "destructive",
-      });
-    },
-  });
+  const { supermarkets, selectedSupermarket, selectSupermarket, isLoading } = useSupermarket();
 
   const handleSelectSupermarket = (id: string) => {
-    selectSupermarketMutation.mutate(id);
+    selectSupermarket(id);
+    toast({
+      title: "Supermarkt ausgewählt",
+      description: "Der Supermarkt wurde erfolgreich ausgewählt",
+    });
   };
 
   return (
@@ -55,7 +33,7 @@ export default function SupermarketSelector() {
                   : "border border-border hover:border-primary"
               }`}
               onClick={() => handleSelectSupermarket(market.id)}
-              disabled={selectSupermarketMutation.isPending}
+              disabled={isLoading}
               data-testid={`button-supermarket-${market.id}`}
             >
               <div className="flex items-center space-x-3">

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 import { HealthCriteriaProvider } from '@/contexts/healthCriteria';
+import { SupermarketProvider } from '@/contexts/supermarket';
 
 function Router() {
   return (
@@ -21,8 +22,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <HealthCriteriaProvider>
-          <Toaster />
-          <Router />
+          <SupermarketProvider>
+            <Toaster />
+            <Router />
+          </SupermarketProvider>
         </HealthCriteriaProvider>
       </TooltipProvider>
     </QueryClientProvider>

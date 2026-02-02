@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ProductSuggestions from "./product-suggestions";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, X, Search } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,8 +17,6 @@ interface ShoppingListSidebarProps {
 
 export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSidebarProps) {
   const [newItem, setNewItem] = useState("");
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const { data: items = [], isLoading } = useQuery<ShoppingListItem[]>({
@@ -70,36 +68,6 @@ export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSid
     },
   });
 
-  const searchProductsMutation = useMutation({
-    mutationFn: async (query: string) => {
-      const response = await apiRequest("POST", "/api/products/search", { query });
-      return response.json();
-    },
-    onSuccess: (products: Product[]) => {
-      setSearchResults(products);
-      setIsSearching(false);
-      if (products.length === 0) {
-        toast({
-          title: "Keine Produkte gefunden",
-          description: "Für Ihre Einkaufsliste wurden keine passenden Produkte gefunden",
-        });
-      } else {
-        toast({
-          title: "Produkte gefunden",
-          description: `${products.length} passende Produkte gefunden`,
-        });
-      }
-    },
-    onError: () => {
-      setIsSearching(false);
-      toast({
-        title: "Fehler",
-        description: "Produktsuche konnte nicht durchgeführt werden",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItem.trim()) return;
@@ -117,24 +85,6 @@ export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSid
 
   const handleDeleteItem = (id: string) => {
     deleteItemMutation.mutate(id);
-  };
-
-  const handleSearchProducts = () => {
-    if (items.length === 0) return;
-    
-    setIsSearching(true);
-    // Search for products based on shopping list items
-    const searchQuery = items.filter(item => !item.completed).map(item => item.name).join(" ");
-    
-    if (searchQuery.trim()) {
-      searchProductsMutation.mutate(searchQuery);
-    } else {
-      setIsSearching(false);
-      toast({
-        title: "Keine Artikel",
-        description: "Fügen Sie Artikel zur Einkaufsliste hinzu, um Produkte zu finden",
-      });
-    }
   };
 
   return (
@@ -180,6 +130,15 @@ export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSid
               <div key={item.id} className="p-3 bg-muted rounded-lg" data-testid={`shopping-item-${item.id}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
+                    {/* Produktbild anzeigen, wenn vorhanden */}
+                    {item.imageUrl && (
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name}
+                        className="w-10 h-10 object-cover rounded"
+                      />
+                    )}
+                    
                     <Checkbox
                       checked={item.completed}
                       onCheckedChange={(checked) => 
@@ -210,78 +169,36 @@ export default function ShoppingListSidebar({ onProductSelect }: ShoppingListSid
                   </div>
                 </div>
 
-                {/* Vorschläge unter dem jeweiligen Listeneintrag */}
-                <div className="mt-2">
-                  <ProductSuggestions
-                    query={item.name}
-                    onSelect={async (product) => {
-                      // Update shopping list entry with selected product name
-                      try {
-                        await updateItemMutation.mutateAsync({ id: item.id, updates: { name: product.name } });
-                      } catch (e) {
-                        // ignore - mutation handles toast
-                      }
-                    }}
-                  />
-                </div>
+                {/* Produktvorschläge erscheinen automatisch unter jedem Listeneintrag */}
+                {!item.completed && (
+                  <div className="mt-2">
+                    <ProductSuggestions
+                      query={item.name}
+                      onSelect={async (product) => {
+                        // Produkt auswählen: Name UND Bild werden übernommen
+                        try {
+                          await updateItemMutation.mutateAsync({ 
+                            id: item.id, 
+                            updates: { 
+                              name: product.name,
+                              imageUrl: product.imageUrl
+                            } 
+                          });
+                          toast({
+                            title: "Produkt übernommen",
+                            description: `${product.name} wurde zur Einkaufsliste hinzugefügt`,
+                          });
+                        } catch (e) {
+                          // ignore - mutation handles error toast
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
-        
-        <Button 
-          className="w-full" 
-          disabled={items.length === 0 || isSearching}
-          onClick={handleSearchProducts}
-          data-testid="button-find-products"
-        >
-          <Search className="w-4 h-4 mr-2" />
-          {isSearching ? "Suche läuft..." : "Produkte finden"}
-        </Button>
-
-        {/* Product Search Results Carousel */}
-        {searchResults.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-3" data-testid="search-results-title">
-              Gefundene Produkte ({searchResults.length})
-            </h4>
-            <div className="flex gap-3 overflow-x-auto pb-3" data-testid="product-carousel">
-              {searchResults.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex-shrink-0 w-48 border border-border rounded-lg p-3 hover:border-primary transition-colors cursor-pointer"
-                  onClick={() => onProductSelect?.(product.id)}
-                  data-testid={`product-card-${product.id}`}
-                >
-                  <div className="text-sm font-medium text-foreground mb-1" data-testid={`text-product-name-${product.id}`}>
-                    {product.name}
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-2" data-testid={`text-product-brand-${product.id}`}>
-                    {product.brand} • {product.size}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-primary" data-testid={`text-product-price-${product.id}`}>
-                      €{product.price.toFixed(2)}
-                    </span>
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <span
-                          key={i}
-                          className={`text-xs ${i < product.healthScore ? 'text-yellow-400' : 'text-gray-300'}`}
-                        >
-                          ⭐
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1" data-testid={`text-product-supermarket-${product.id}`}>
-                    {product.supermarket}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

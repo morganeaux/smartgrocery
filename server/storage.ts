@@ -243,7 +243,8 @@ export class MemStorage implements IStorage {
       id,
       quantity: insertItem.quantity ?? "1x",
       completed: insertItem.completed ?? false,
-      category: insertItem.category ?? null
+      category: insertItem.category ?? null,
+      imageUrl: insertItem.imageUrl ?? null
     };
     this.shoppingListItems.set(id, item);
     return item;
@@ -265,6 +266,7 @@ export class MemStorage implements IStorage {
   // Products
   async getProducts(filters?: ProductSearchFilters): Promise<Product[]> {
     let products = Array.from(this.products.values());
+    console.log('DEBUG: Total products in storage:', products.length);
 
     if (!filters) return products;
 
