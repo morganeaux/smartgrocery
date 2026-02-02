@@ -2,6 +2,7 @@ import Navigation from "@/components/navigation";
 import ShoppingListSidebar from "@/components/shopping-list-sidebar";
 import SupermarketSelector from "@/components/supermarket-selector";
 import FilterControls from "@/components/filter-controls";
+import ProductRecommendations from "@/components/product-recommendations";
 import ProductDetailModal from "@/components/product-detail-modal";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
@@ -32,6 +33,7 @@ export default function Home() {
           <div className="lg:col-span-2">
             <SupermarketSelector />
             <FilterControls />
+            <ProductRecommendations onProductSelect={setSelectedProductId} />
           </div>
         </div>
       </div>
