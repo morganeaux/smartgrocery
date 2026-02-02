@@ -137,12 +137,20 @@ export default function ProductSuggestions({ query, limit = 6, onSelect }: Produ
     };
   }, [query, limit, enabledCriteria, selectedSupermarket]);
 
-  if (!query || products.length === 0) return null;
+  // Wenn kein Query, nichts anzeigen
+  if (!query) return null;
 
   return (
     <>
-      {/* Active filters badge */}
-      {(enabledCriteria.length > 0 || selectedSupermarket) && (
+      {/* Loading State */}
+      {loading && (
+        <div className="mt-2 text-xs text-muted-foreground" data-testid="product-suggestions-loading">
+          Suche nach Produkten für "{query}"...
+        </div>
+      )}
+      
+      {/* Active filters badge - nur anzeigen wenn nicht loading und Produkte vorhanden */}
+      {!loading && products.length > 0 && (enabledCriteria.length > 0 || selectedSupermarket) && (
         <div className="mt-2">
           <div className="text-xs text-muted-foreground mb-1">Aktive Filter:</div>
           <div className="flex flex-wrap gap-2">
@@ -159,13 +167,24 @@ export default function ProductSuggestions({ query, limit = 6, onSelect }: Produ
           </div>
         </div>
       )}
-      <div className="mt-2">
-        <div className="flex gap-3 overflow-x-auto pb-3" data-testid="product-suggestions-carousel">
-          {products.map((p) => (
-            <SuggestionCard key={p.id} product={p} onSelect={onSelect} onOpen={(prod) => setDetailsProduct(prod)} />
-          ))}
+      
+      {/* Keine Produkte gefunden */}
+      {!loading && products.length === 0 && (
+        <div className="mt-2 text-xs text-muted-foreground" data-testid="product-suggestions-empty">
+          Keine Produkte gefunden für "{query}"
         </div>
-      </div>
+      )}
+      
+      {/* Produkte anzeigen */}
+      {!loading && products.length > 0 && (
+        <div className="mt-2">
+          <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide" data-testid="product-suggestions-carousel">
+            {products.map((p) => (
+              <SuggestionCard key={p.id} product={p} onSelect={onSelect} onOpen={(prod) => setDetailsProduct(prod)} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* render details modal when a product is selected for details */}
       {detailsProduct && (

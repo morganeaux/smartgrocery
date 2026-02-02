@@ -1,11 +1,11 @@
 import type { Product } from "@shared/schema";
 
-export async function fetchProductsFromOpenFoodFacts(query: string): Promise<Product[]> {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1`;
+export async function fetchProductsFromOpenFoodFacts(query: string, limit: number = 20): Promise<Product[]> {
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=${limit}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  return (data.products || []).map((p: any) => {
+  return (data.products || []).slice(0, limit).map((p: any) => {
     const imageUrl = p.image_front_url || p.image_url || p.image_small_url || "";
     const name = p.product_name || p.generic_name || p.brands || "Unbekanntes Produkt";
     const brand = Array.isArray(p.brands_tags) && p.brands_tags.length ? p.brands_tags[0] : (p.brands || "");

@@ -109,10 +109,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!query) return res.json([]);
       try {
-        const products = await storage.getProducts(filters);
+        // Zuerst in-memory Produkte suchen
+        let products = await storage.getProducts(filters);
+        
+        // Wenn keine gefunden, von OpenFoodFacts holen
+        if (products.length === 0) {
+          const { fetchProductsFromOpenFoodFacts } = await import('./services/openfoodfacts-products');
+          const openFoodFactsProducts = await fetchProductsFromOpenFoodFacts(query, limit);
+          
+          // Filter anwenden (falls vorhanden)
+          let filteredProducts = openFoodFactsProducts;
+          
+          if (filters.supermarket) {
+            // OpenFoodFacts Produkte haben meist "OpenFoodFacts" als supermarket
+            // Wir filtern nur, wenn der Filter nicht "OpenFoodFacts" ist
+            if (filters.supermarket !== "OpenFoodFacts") {
+              // Bei OpenFoodFacts können wir nicht nach Supermarkt filtern
+              // Aber wir können trotzdem die Produkte zurückgeben
+            }
+          }
+          
+          // Health Criteria Filter anwenden
+          if (filters.isOrganic) {
+            filteredProducts = filteredProducts.filter(p => p.isOrganic);
+          }
+          if (filters.isGlutenFree) {
+            filteredProducts = filteredProducts.filter(p => p.isGlutenFree);
+          }
+          if (filters.isLactoseFree) {
+            filteredProducts = filteredProducts.filter(p => p.isLactoseFree);
+          }
+          if (filters.isSoyFree) {
+            filteredProducts = filteredProducts.filter(p => p.isSoyFree);
+          }
+          if (filters.hasNoSweeteners) {
+            filteredProducts = filteredProducts.filter(p => p.hasNoSweeteners);
+          }
+          if (filters.isNotUltraProcessed) {
+            filteredProducts = filteredProducts.filter(p => p.isNotUltraProcessed);
+          }
+          
+          products = filteredProducts.slice(0, limit);
+        }
+        
         res.json(products);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching products:', err);
         res.status(500).json({ message: 'failed' });
       }
   });
